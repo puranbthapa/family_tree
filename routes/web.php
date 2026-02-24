@@ -11,7 +11,8 @@ Route::get('/health', function () {
 Route::get('/{any?}', function () {
     $path = public_path('index.html');
     if (file_exists($path)) {
-        return response()->file($path);
+        return response(file_get_contents($path), 200)
+            ->header('Content-Type', 'text/html');
     }
     return view('welcome');
 })->where('any', '(?!api).*');
