@@ -1,3 +1,49 @@
+## Hamro Bansawali Family Tree
+
+This project is a full-stack family tree manager built with Laravel (backend) and React/Vite (frontend).
+
+### Features
+- Build and visualize Nepali family trees (Bansawali)
+- Collaborate with family members
+- Track life events and milestones
+- Import/export via GEDCOM
+- Photo gallery and more
+
+---
+
+## Deployment Process (Live Server)
+
+### 1. Build Frontend Locally
+```
+cd frontend
+npm install
+npm run build
+```
+This generates production files in `frontend/public`.
+
+### 2. Upload Build Output to Server
+- Copy `frontend/public/index.html` to your server's `public_html/index.html`
+- Copy everything in `frontend/public/assets/` to `public_html/assets/`
+- Copy `frontend/public/logo.png` to `public_html/logo.png`
+
+### 3. Update Backend (if needed)
+- Push backend changes to GitHub
+- On server, pull latest code:
+```
+git pull origin main
+```
+
+### 4. Clear Laravel Cache (optional)
+```
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+### 5. Verify
+- Visit your live site and check for updates (logo, features, etc.)
+
+---
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
