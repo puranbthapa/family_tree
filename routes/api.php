@@ -10,11 +10,17 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\CollaboratorController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ExportImportController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\AdminController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/life-event-types', [LifeEventController::class, 'types']);
+
+// Public trees (browsable without authentication)
+Route::get('/public/trees', [FamilyTreeController::class, 'publicIndex']);
+Route::get('/public/trees/{familyTree}', [FamilyTreeController::class, 'publicShow']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -70,4 +76,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Activity log
     Route::get('/trees/{familyTree}/activity', [ExportImportController::class, 'activityLog']);
+
+    // Roles & User Management (admin only)
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+
+        // Users
+        Route::get('/users', [AdminController::class, 'users']);
+        Route::get('/users/{user}', [AdminController::class, 'showUser']);
+        Route::put('/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::put('/users/{user}/roles', [AdminController::class, 'assignRoles']);
+
+        // Trees
+        Route::get('/trees', [AdminController::class, 'trees']);
+        Route::delete('/trees/{familyTree}', [AdminController::class, 'deleteTree']);
+
+        // Activity
+        Route::get('/activity', [AdminController::class, 'activityLog']);
+
+        // Roles
+        Route::get('/roles', [AdminController::class, 'roles']);
+        Route::post('/roles', [AdminController::class, 'createRole']);
+        Route::put('/roles/{role}', [AdminController::class, 'updateRole']);
+        Route::delete('/roles/{role}', [AdminController::class, 'deleteRole']);
+    });
 });

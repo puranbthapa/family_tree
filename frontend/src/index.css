@@ -60,10 +60,18 @@
     radial-gradient(circle at 1px 1px, #e5e7eb 0.5px, transparent 0) 0 0 / 20px 20px;
   user-select: none;
   cursor: grab;
+  cursor: -webkit-grab;
 }
 
 .family-tree-canvas.panning {
-  cursor: grabbing;
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
+/* While panning, override ALL child cursors so pointer doesn't flicker */
+.family-tree-canvas.panning * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
 }
 
 /* Full-page overlay mode — covers entire viewport */

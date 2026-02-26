@@ -20,6 +20,7 @@ class Person extends Model
         'date_of_birth', 'birth_place', 'birth_latitude', 'birth_longitude',
         'date_of_death', 'death_place', 'death_latitude', 'death_longitude',
         'is_living', 'occupation', 'religion', 'nationality',
+        'province', 'district', 'municipality', 'address',
         'email', 'phone', 'bio', 'notes', 'profile_photo',
         'custom_fields', 'tree_position_x', 'tree_position_y',
     ];

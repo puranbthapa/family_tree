@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { treesApi, personsApi, relationshipsApi, exportImportApi } from '../api';
 import useTreeStore from '../store/treeStore';
+import { NEPAL_PROVINCES, getDistricts, getMunicipalities } from '../data/nepalLocations';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import FamilyTreeChart from '../components/FamilyTreeChart';
@@ -25,7 +26,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function TreeView() {
-  const { treeId } = useParams();
+  const { treeSlug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { setCurrentTree, setPersons, setRelationships } = useTreeStore();
@@ -37,17 +38,21 @@ export default function TreeView() {
     first_name: '', last_name: '', gender: 'unknown',
     date_of_birth: '', birth_place: '', occupation: '',
     maiden_name: '', nickname: '', is_living: true,
+    date_of_death: '', death_place: '',
+    phone: '', email: '', religion: '', nationality: '',
+    province: '', district: '', municipality: '', address: '',
+    bio: '',
   });
   const [relForm, setRelForm] = useState({ person1_id: '', person2_id: '', type: 'parent_child' });
 
   const { data: tree, isLoading } = useQuery({
-    queryKey: ['tree', treeId],
-    queryFn: () => treesApi.get(treeId).then((r) => r.data),
+    queryKey: ['tree', treeSlug],
+    queryFn: () => treesApi.get(treeSlug).then((r) => r.data),
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['tree-stats', treeId],
-    queryFn: () => treesApi.statistics(treeId).then((r) => r.data),
+    queryKey: ['tree-stats', treeSlug],
+    queryFn: () => treesApi.statistics(treeSlug).then((r) => r.data),
   });
 
   useEffect(() => {
@@ -59,15 +64,19 @@ export default function TreeView() {
   }, [tree]);
 
   const createPersonMutation = useMutation({
-    mutationFn: (data) => personsApi.create(treeId, data),
+    mutationFn: (data) => personsApi.create(treeSlug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tree', treeId] });
-      queryClient.invalidateQueries({ queryKey: ['tree-stats', treeId] });
+      queryClient.invalidateQueries({ queryKey: ['tree', treeSlug] });
+      queryClient.invalidateQueries({ queryKey: ['tree-stats', treeSlug] });
       setShowAddPerson(false);
       setPersonForm({
         first_name: '', last_name: '', gender: 'unknown',
         date_of_birth: '', birth_place: '', occupation: '',
         maiden_name: '', nickname: '', is_living: true,
+        date_of_death: '', death_place: '',
+        phone: '', email: '', religion: '', nationality: '',
+        province: '', district: '', municipality: '', address: '',
+        bio: '',
       });
       toast.success('Person added!');
     },
@@ -75,9 +84,9 @@ export default function TreeView() {
   });
 
   const createRelMutation = useMutation({
-    mutationFn: (data) => relationshipsApi.create(treeId, data),
+    mutationFn: (data) => relationshipsApi.create(treeSlug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tree', treeId] });
+      queryClient.invalidateQueries({ queryKey: ['tree', treeSlug] });
       setShowAddRelation(false);
       setRelForm({ person1_id: '', person2_id: '', type: 'parent_child' });
       toast.success('Relationship created!');
@@ -87,7 +96,7 @@ export default function TreeView() {
 
   const handleExportGedcom = async () => {
     try {
-      const { data } = await exportImportApi.exportGedcom(treeId);
+      const { data } = await exportImportApi.exportGedcom(treeSlug);
       const url = window.URL.createObjectURL(new Blob([data]));
       const a = document.createElement('a');
       a.href = url;
@@ -120,8 +129,8 @@ export default function TreeView() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const { data } = await exportImportApi.importGedcom(treeId, formData);
-      queryClient.invalidateQueries({ queryKey: ['tree', treeId] });
+      const { data } = await exportImportApi.importGedcom(treeSlug, formData);
+      queryClient.invalidateQueries({ queryKey: ['tree', treeSlug] });
       toast.success(`Imported ${data.stats.persons} persons and ${data.stats.relationships} relationships`);
     } catch {
       toast.error('Import failed');
@@ -130,7 +139,13 @@ export default function TreeView() {
   };
 
   if (isLoading) return <LoadingSpinner className="mt-20" />;
-  if (!tree) return <div className="text-center mt-20 text-gray-600">Tree not found</div>;
+
+  useEffect(() => {
+    if (!isLoading && !tree) {
+      navigate('/', { replace: true });
+    }
+  }, [isLoading, tree, navigate]);
+  if (!tree) return null;
 
   const persons = tree.persons || [];
   const filteredPersons = persons.filter((p) =>
@@ -158,13 +173,13 @@ export default function TreeView() {
           {/* Nav Links */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
-              to={`/trees/${treeId}/relationships`}
+              to={`/trees/${treeSlug}/relationships`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/90 bg-white/10 hover:bg-white/20 rounded-lg transition"
             >
               <LinkIcon className="w-3.5 h-3.5" /> Relations
             </Link>
             <Link
-              to={`/trees/${treeId}/settings`}
+              to={`/trees/${treeSlug}/settings`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/90 bg-white/10 hover:bg-white/20 rounded-lg transition"
             >
               <Cog6ToothIcon className="w-3.5 h-3.5" /> Settings
@@ -301,7 +316,7 @@ export default function TreeView() {
               ref={chartRef}
               persons={persons}
               relationships={tree.relationships || []}
-              treeId={treeId}
+              treeSlug={treeSlug}
             />
           </div>
         )}
@@ -327,7 +342,7 @@ export default function TreeView() {
                   return (
                     <Link
                       key={person.id}
-                      to={`/trees/${treeId}/persons/${person.id}`}
+                      to={`/trees/${treeSlug}/persons/${person.id}`}
                       className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg hover:border-indigo-200 transition-all duration-200 flex items-center gap-3"
                     >
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm ${
@@ -358,60 +373,178 @@ export default function TreeView() {
 
       {/* Add Person Modal */}
       <Modal isOpen={showAddPerson} onClose={() => setShowAddPerson(false)} title="Add Family Member" size="lg">
-        <form onSubmit={(e) => { e.preventDefault(); createPersonMutation.mutate(personForm); }} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-              <input className="input-field" value={personForm.first_name}
-                onChange={(e) => setPersonForm({ ...personForm, first_name: e.target.value })} required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-              <input className="input-field" value={personForm.last_name}
-                onChange={(e) => setPersonForm({ ...personForm, last_name: e.target.value })} required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Maiden Name</label>
-              <input className="input-field" value={personForm.maiden_name}
-                onChange={(e) => setPersonForm({ ...personForm, maiden_name: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
-              <input className="input-field" value={personForm.nickname}
-                onChange={(e) => setPersonForm({ ...personForm, nickname: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select className="input-field" value={personForm.gender}
-                onChange={(e) => setPersonForm({ ...personForm, gender: e.target.value })}>
-                <option value="unknown">Unknown</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-              <input type="date" className="input-field" value={personForm.date_of_birth}
-                onChange={(e) => setPersonForm({ ...personForm, date_of_birth: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Birth Place</label>
-              <input className="input-field" value={personForm.birth_place}
-                onChange={(e) => setPersonForm({ ...personForm, birth_place: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
-              <input className="input-field" value={personForm.occupation}
-                onChange={(e) => setPersonForm({ ...personForm, occupation: e.target.value })} />
+        <form onSubmit={(e) => { e.preventDefault(); createPersonMutation.mutate(personForm); }} className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Section 1: Basic Info */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
+              Basic Information
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                <input className="input-field" value={personForm.first_name}
+                  onChange={(e) => setPersonForm({ ...personForm, first_name: e.target.value })} required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                <input className="input-field" value={personForm.last_name}
+                  onChange={(e) => setPersonForm({ ...personForm, last_name: e.target.value })} required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Maiden Name</label>
+                <input className="input-field" value={personForm.maiden_name}
+                  onChange={(e) => setPersonForm({ ...personForm, maiden_name: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
+                <input className="input-field" value={personForm.nickname}
+                  onChange={(e) => setPersonForm({ ...personForm, nickname: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select className="input-field" value={personForm.gender}
+                  onChange={(e) => setPersonForm({ ...personForm, gender: e.target.value })}>
+                  <option value="unknown">Unknown</option>
+                  <option value="male">Male (पुरुष)</option>
+                  <option value="female">Female (महिला)</option>
+                  <option value="other">Other (अन्य)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
+                <input className="input-field" value={personForm.occupation}
+                  onChange={(e) => setPersonForm({ ...personForm, occupation: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Religion (धर्म)</label>
+                <input className="input-field" value={personForm.religion}
+                  onChange={(e) => setPersonForm({ ...personForm, religion: e.target.value })}
+                  placeholder="e.g. Hindu, Buddhist" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                <input className="input-field" value={personForm.nationality}
+                  onChange={(e) => setPersonForm({ ...personForm, nationality: e.target.value })}
+                  placeholder="e.g. Nepali" />
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="is_living" checked={personForm.is_living}
-              onChange={(e) => setPersonForm({ ...personForm, is_living: e.target.checked })} />
-            <label htmlFor="is_living" className="text-sm text-gray-700">Currently living</label>
+
+          {/* Section 2: Birth & Death */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
+              Birth & Death
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                <input type="date" className="input-field" value={personForm.date_of_birth}
+                  onChange={(e) => setPersonForm({ ...personForm, date_of_birth: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Birth Place</label>
+                <input className="input-field" value={personForm.birth_place}
+                  onChange={(e) => setPersonForm({ ...personForm, birth_place: e.target.value })} />
+              </div>
+              <div className="col-span-2 flex items-center gap-2">
+                <input type="checkbox" id="is_living" checked={personForm.is_living}
+                  onChange={(e) => setPersonForm({ ...personForm, is_living: e.target.checked, date_of_death: e.target.checked ? '' : personForm.date_of_death, death_place: e.target.checked ? '' : personForm.death_place })} />
+                <label htmlFor="is_living" className="text-sm text-gray-700">Currently living</label>
+              </div>
+              {!personForm.is_living && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Death</label>
+                    <input type="date" className="input-field" value={personForm.date_of_death}
+                      onChange={(e) => setPersonForm({ ...personForm, date_of_death: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Death Place</label>
+                    <input className="input-field" value={personForm.death_place}
+                      onChange={(e) => setPersonForm({ ...personForm, death_place: e.target.value })} />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex gap-3 justify-end pt-2">
+
+          {/* Section 3: Contact */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">3</span>
+              Contact
+              <span className="text-[10px] font-normal text-gray-400 normal-case">(optional)</span>
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="tel" className="input-field" value={personForm.phone}
+                  onChange={(e) => setPersonForm({ ...personForm, phone: e.target.value })}
+                  placeholder="98XXXXXXXX" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" className="input-field" value={personForm.email}
+                  onChange={(e) => setPersonForm({ ...personForm, email: e.target.value })}
+                  placeholder="email@example.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Address (Nepal) */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">4</span>
+              Address (ठेगाना)
+              <span className="text-[10px] font-normal text-gray-400 normal-case">(optional)</span>
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Province (प्रदेश)</label>
+                <select className="input-field" value={personForm.province}
+                  onChange={(e) => setPersonForm({ ...personForm, province: e.target.value, district: '', municipality: '' })}>
+                  <option value="">Select province</option>
+                  {NEPAL_PROVINCES.map((p) => (<option key={p} value={p}>{p}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">District (जिल्ला)</label>
+                <select className="input-field" value={personForm.district}
+                  onChange={(e) => setPersonForm({ ...personForm, district: e.target.value, municipality: '' })}
+                  disabled={!personForm.province}>
+                  <option value="">Select district</option>
+                  {getDistricts(personForm.province).map((d) => (<option key={d} value={d}>{d}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Municipality (नगरपालिका)</label>
+                <select className="input-field" value={personForm.municipality}
+                  onChange={(e) => setPersonForm({ ...personForm, municipality: e.target.value })}
+                  disabled={!personForm.district}>
+                  <option value="">Select municipality</option>
+                  {getMunicipalities(personForm.province, personForm.district).map((m) => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ward / Tole (वडा / टोल)</label>
+                <input className="input-field" value={personForm.address}
+                  onChange={(e) => setPersonForm({ ...personForm, address: e.target.value })}
+                  placeholder="e.g. Ward-5, Lakeside" />
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bio / Notes</label>
+            <textarea className="input-field" rows={2} value={personForm.bio}
+              onChange={(e) => setPersonForm({ ...personForm, bio: e.target.value })}
+              placeholder="Short biography or notes about the person..." />
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2 sticky bottom-0 bg-white pb-1">
             <button type="button" onClick={() => setShowAddPerson(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary" disabled={createPersonMutation.isPending}>
               {createPersonMutation.isPending ? 'Adding...' : 'Add Person'}

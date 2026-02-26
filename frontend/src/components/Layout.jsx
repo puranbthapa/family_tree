@@ -9,10 +9,12 @@ import {
   UserCircleIcon,
   Bars3Icon,
   XMarkIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 export default function Layout() {
   const { user, clearAuth } = useAuthStore();
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -41,17 +43,25 @@ export default function Layout() {
               {sidebarOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
             </button>
             <Link to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FT</span>
-              </div>
-              <span className="font-bold text-lg text-gray-900 hidden sm:block">Family Tree</span>
+              <img
+                src="/logo.png"
+                alt="Hamro Bansawali Logo"
+                className="w-16 h-16 object-contain bg-white rounded-lg"
+                style={{ background: 'white' }}
+              />
+              <span className="font-bold text-lg text-gray-900 hidden sm:block">Hamro Bansawali</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <UserCircleIcon className="w-8 h-8 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{user?.name}</span>
+              <div className="hidden sm:flex flex-col items-start">
+                <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+                {user?.role_names?.length > 0 && (
+                  <span className="text-xs text-gray-400">{user.role_names.join(', ')}</span>
+                )}
+              </div>
             </div>
             <button
               onClick={handleLogout}
@@ -84,6 +94,20 @@ export default function Layout() {
               <HomeIcon className="w-5 h-5" />
               Dashboard
             </Link>
+            {isAdmin() && (
+              <Link
+                to="/admin"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  location.pathname.startsWith('/admin')
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <ShieldCheckIcon className="w-5 h-5" />
+                Admin Panel
+              </Link>
+            )}
           </nav>
         </aside>
 

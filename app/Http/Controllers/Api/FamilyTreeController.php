@@ -9,6 +9,47 @@ use Illuminate\Http\Request;
 
 class FamilyTreeController extends Controller
 {
+    /**
+     * Browse public trees (no auth required).
+     */
+    public function publicIndex(Request $request)
+    {
+        $query = FamilyTree::where('privacy', 'public')
+            ->with('owner:id,name')
+            ->withCount('persons');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $trees = $query->latest()->paginate(20);
+
+        return response()->json($trees);
+    }
+
+    /**
+     * View a single public tree (no auth required).
+     */
+    public function publicShow(FamilyTree $familyTree)
+    {
+        if (!$familyTree->isPublic()) {
+            return response()->json(['message' => 'This tree is not public'], 403);
+        }
+
+        $familyTree->load([
+            'owner:id,name',
+            'persons' => fn($q) => $q->withCount('media'),
+            'relationships.person1:id,first_name,last_name,gender',
+            'relationships.person2:id,first_name,last_name,gender',
+        ]);
+        $familyTree->loadCount('persons');
+
+        return response()->json($familyTree);
+    }
+
     public function index(Request $request)
     {
         $trees = $request->user()->allAccessibleTrees()
@@ -51,6 +92,22 @@ class FamilyTreeController extends Controller
             'relationships.person2:id,first_name,last_name,gender',
         ]);
         $familyTree->loadCount('persons');
+
+        // Include the user's role for this tree
+        $user = $request->user();
+        $userRole = 'viewer'; // default for public trees
+        if ($familyTree->owner_id === $user->id) {
+            $userRole = 'owner';
+        } else {
+            $collab = $familyTree->treeCollaborators()
+                ->where('user_id', $user->id)
+                ->whereNotNull('accepted_at')
+                ->first();
+            if ($collab) {
+                $userRole = $collab->role;
+            }
+        }
+        $familyTree->setAttribute('user_role', $userRole);
 
         return response()->json($familyTree);
     }

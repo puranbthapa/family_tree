@@ -337,7 +337,7 @@ function ConnectorLines({ familyUnits, couples, positions }) {
 }
 
 // ─── Person Card ─────────────────────────────────────────────────
-function PersonCard({ person, position, treeId, onClickCheck }) {
+function PersonCard({ person, position, treeSlug, onClickCheck }) {
   const [hovered, setHovered] = useState(false);
   const hoverTimer = useRef(null);
 
@@ -372,7 +372,7 @@ function PersonCard({ person, position, treeId, onClickCheck }) {
       onMouseLeave={handleMouseLeave}
     >
       <Link
-        to={`/trees/${treeId}/persons/${person.id}`}
+        to={`/trees/${treeSlug}/persons/${person.id}`}
         className="family-card-link"
         onClick={onClickCheck}
         style={{ display: 'block', width: CARD_W, height: CARD_H }}
@@ -469,7 +469,7 @@ function PersonCard({ person, position, treeId, onClickCheck }) {
 }
 
 // ─── Main Chart Component (with Pan & Zoom) ─────────────────────
-const FamilyTreeChart = forwardRef(function FamilyTreeChart({ persons, relationships, treeId }, ref) {
+const FamilyTreeChart = forwardRef(function FamilyTreeChart({ persons, relationships, treeSlug }, ref) {
   const layout = useMemo(() => layoutTree(persons, relationships), [persons, relationships]);
   const { positions, personMap, couples, familyUnits, generation, totalWidth, totalHeight } = layout;
 
@@ -544,6 +544,23 @@ const FamilyTreeChart = forwardRef(function FamilyTreeChart({ persons, relations
   const handleMouseUp = useCallback(() => {
     isDragging.current = false;
     setIsPanning(false);
+  }, []);
+
+  // Global mouseup listener — ensures panning stops even if mouse is released outside canvas/window
+  useEffect(() => {
+    const onGlobalMouseUp = () => {
+      if (isDragging.current) {
+        isDragging.current = false;
+        setIsPanning(false);
+      }
+    };
+    window.addEventListener('mouseup', onGlobalMouseUp);
+    // Also handle when the window loses focus (e.g. alt-tab while panning)
+    window.addEventListener('blur', onGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', onGlobalMouseUp);
+      window.removeEventListener('blur', onGlobalMouseUp);
+    };
   }, []);
 
   // ── Wheel zoom ──
@@ -690,7 +707,7 @@ const FamilyTreeChart = forwardRef(function FamilyTreeChart({ persons, relations
                 key={person.id}
                 person={person}
                 position={pos}
-                treeId={treeId}
+                treeSlug={treeSlug}
                 onClickCheck={onCardClick}
               />
             );

@@ -13,32 +13,32 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function TreeSettings() {
-  const { treeId } = useParams();
+  const { treeSlug } = useParams();
   const queryClient = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'viewer' });
   const [activeTab, setActiveTab] = useState('collaborators');
 
   const { data: tree, isLoading } = useQuery({
-    queryKey: ['tree', treeId],
-    queryFn: () => treesApi.get(treeId).then((r) => r.data),
+    queryKey: ['tree', treeSlug],
+    queryFn: () => treesApi.get(treeSlug).then((r) => r.data),
   });
 
   const { data: collabData } = useQuery({
-    queryKey: ['collaborators', treeId],
-    queryFn: () => collaboratorsApi.list(treeId).then((r) => r.data),
+    queryKey: ['collaborators', treeSlug],
+    queryFn: () => collaboratorsApi.list(treeSlug).then((r) => r.data),
   });
 
   const { data: activityData } = useQuery({
-    queryKey: ['activity', treeId],
-    queryFn: () => exportImportApi.activityLog(treeId).then((r) => r.data),
+    queryKey: ['activity', treeSlug],
+    queryFn: () => exportImportApi.activityLog(treeSlug).then((r) => r.data),
     enabled: activeTab === 'activity',
   });
 
   const inviteMutation = useMutation({
-    mutationFn: (data) => collaboratorsApi.invite(treeId, data),
+    mutationFn: (data) => collaboratorsApi.invite(treeSlug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['collaborators', treeId] });
+      queryClient.invalidateQueries({ queryKey: ['collaborators', treeSlug] });
       setShowInvite(false);
       setInviteForm({ email: '', role: 'viewer' });
       toast.success('Invitation sent!');
@@ -47,17 +47,17 @@ export default function TreeSettings() {
   });
 
   const removeMutation = useMutation({
-    mutationFn: (collabId) => collaboratorsApi.remove(treeId, collabId),
+    mutationFn: (collabId) => collaboratorsApi.remove(treeSlug, collabId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['collaborators', treeId] });
+      queryClient.invalidateQueries({ queryKey: ['collaborators', treeSlug] });
       toast.success('Collaborator removed');
     },
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: ({ collabId, role }) => collaboratorsApi.updateRole(treeId, collabId, role),
+    mutationFn: ({ collabId, role }) => collaboratorsApi.updateRole(treeSlug, collabId, role),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['collaborators', treeId] });
+      queryClient.invalidateQueries({ queryKey: ['collaborators', treeSlug] });
       toast.success('Role updated');
     },
   });
@@ -67,7 +67,7 @@ export default function TreeSettings() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/trees/${treeId}`} className="p-2 rounded-lg hover:bg-gray-100">
+        <Link to={`/trees/${treeSlug}`} className="p-2 rounded-lg hover:bg-gray-100">
           <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">{tree?.name} - Settings</h1>

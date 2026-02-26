@@ -7,20 +7,20 @@ import toast from 'react-hot-toast';
 import { ArrowLeftIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 
 export default function RelationshipCalculator() {
-  const { treeId } = useParams();
+  const { treeSlug } = useParams();
   const [person1Id, setPerson1Id] = useState('');
   const [person2Id, setPerson2Id] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const { data: tree, isLoading } = useQuery({
-    queryKey: ['tree', treeId],
-    queryFn: () => treesApi.get(treeId).then((r) => r.data),
+    queryKey: ['tree', treeSlug],
+    queryFn: () => treesApi.get(treeSlug).then((r) => r.data),
   });
 
   const { data: relData } = useQuery({
-    queryKey: ['relationships', treeId],
-    queryFn: () => relationshipsApi.list(treeId).then((r) => r.data),
+    queryKey: ['relationships', treeSlug],
+    queryFn: () => relationshipsApi.list(treeSlug).then((r) => r.data),
   });
 
   const handleCalculate = async () => {
@@ -34,7 +34,7 @@ export default function RelationshipCalculator() {
     }
     setLoading(true);
     try {
-      const { data } = await relationshipsApi.calculate(treeId, person1Id, person2Id);
+      const { data } = await relationshipsApi.calculate(treeSlug, person1Id, person2Id);
       setResult(data);
     } catch {
       toast.error('Failed to calculate');
@@ -63,7 +63,7 @@ export default function RelationshipCalculator() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/trees/${treeId}`} className="p-2 rounded-lg hover:bg-gray-100">
+        <Link to={`/trees/${treeSlug}`} className="p-2 rounded-lg hover:bg-gray-100">
           <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Relationships & Calculator</h1>
@@ -130,7 +130,7 @@ export default function RelationshipCalculator() {
                 {relationships.map((rel) => (
                   <tr key={rel.id} className="hover:bg-gray-50">
                     <td className="py-2">
-                      <Link to={`/trees/${treeId}/persons/${rel.person1?.id}`} className="text-indigo-600 hover:underline">
+                      <Link to={`/trees/${treeSlug}/persons/${rel.person1?.id}`} className="text-indigo-600 hover:underline">
                         {rel.person1?.first_name} {rel.person1?.last_name}
                       </Link>
                     </td>
@@ -140,7 +140,7 @@ export default function RelationshipCalculator() {
                       </span>
                     </td>
                     <td className="py-2">
-                      <Link to={`/trees/${treeId}/persons/${rel.person2?.id}`} className="text-indigo-600 hover:underline">
+                      <Link to={`/trees/${treeSlug}/persons/${rel.person2?.id}`} className="text-indigo-600 hover:underline">
                         {rel.person2?.first_name} {rel.person2?.last_name}
                       </Link>
                     </td>

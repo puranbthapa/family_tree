@@ -36,7 +36,7 @@ export default function Dashboard() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => treesApi.update(id, data),
+    mutationFn: ({ slug, data }) => treesApi.update(slug, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trees'] });
       setEditTree(null);
@@ -60,7 +60,7 @@ export default function Dashboard() {
   const handleUpdate = (e) => {
     e.preventDefault();
     updateMutation.mutate({
-      id: editTree.id,
+      slug: editTree.slug,
       data: { name: editTree.name, description: editTree.description, privacy: editTree.privacy },
     });
   };
@@ -96,7 +96,7 @@ export default function Dashboard() {
           {trees.map((tree) => (
             <div key={tree.id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
-                <Link to={`/trees/${tree.id}`} className="text-lg font-semibold text-gray-900 hover:text-indigo-600">
+                <Link to={`/trees/${tree.slug}`} className="text-lg font-semibold text-gray-900 hover:text-indigo-600">
                   {tree.name}
                 </Link>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -117,10 +117,10 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
-                <Link to={`/trees/${tree.id}`} className="btn-primary text-sm py-1.5 px-3 flex-1 text-center">
+                <Link to={`/trees/${tree.slug}`} className="btn-primary text-sm py-1.5 px-3 flex-1 text-center">
                   Open
                 </Link>
-                <Link to={`/trees/${tree.id}/editor`} className="btn-secondary text-sm py-1.5 px-3">
+                <Link to={`/trees/${tree.slug}/editor`} className="btn-secondary text-sm py-1.5 px-3">
                   <ChartBarIcon className="w-4 h-4" />
                 </Link>
                 <button
@@ -132,7 +132,7 @@ export default function Dashboard() {
                 <button
                   onClick={() => {
                     if (confirm('Delete this tree and all its data?')) {
-                      deleteMutation.mutate(tree.id);
+                      deleteMutation.mutate(tree.slug);
                     }
                   }}
                   className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition"

@@ -77,14 +77,23 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs sm:text-sm">FT</span>
-              </div>
-              <span className="text-base sm:text-lg font-bold text-gray-900 truncate">Hamro Bansawali</span>
+              <img
+                src="/logo.png"
+                alt="Hamro Bansawali Logo"
+                className="w-60 h-16 sm:w-100px sm:h-32 object-contain bg-white rounded-xl flex-shrink-0"
+                style={{ background: 'white' }}
+              />
+              
             </div>
 
             {/* Desktop nav */}
             <div className="hidden sm:flex items-center gap-3">
+              <Link
+                to="/public/trees"
+                className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Public Trees
+              </Link>
               {isAuthenticated ? (
                 <Link
                   to="/dashboard"

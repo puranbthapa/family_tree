@@ -6,11 +6,11 @@ import FamilyTreeChart from '../components/FamilyTreeChart';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export default function TreeEditor() {
-  const { treeId } = useParams();
+  const { treeSlug } = useParams();
 
   const { data: tree, isLoading } = useQuery({
-    queryKey: ['tree', treeId],
-    queryFn: () => treesApi.get(treeId).then((r) => r.data),
+    queryKey: ['tree', treeSlug],
+    queryFn: () => treesApi.get(treeSlug).then((r) => r.data),
   });
 
   if (isLoading) return <LoadingSpinner className="mt-20" />;
@@ -23,7 +23,7 @@ export default function TreeEditor() {
       {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Link to={`/trees/${treeId}`} className="p-2 rounded-lg hover:bg-gray-100">
+          <Link to={`/trees/${treeSlug}`} className="p-2 rounded-lg hover:bg-gray-100">
             <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
           </Link>
           <h1 className="text-xl font-bold text-gray-900">{tree?.name}</h1>
@@ -44,7 +44,7 @@ export default function TreeEditor() {
         <FamilyTreeChart
           persons={persons}
           relationships={relationships}
-          treeId={treeId}
+          treeSlug={treeSlug}
         />
       </div>
     </div>

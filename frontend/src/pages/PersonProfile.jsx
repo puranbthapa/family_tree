@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { personsApi, lifeEventsApi, commentsApi, mediaApi, relationshipsApi } from '../api';
+import { NEPAL_PROVINCES, getDistricts, getMunicipalities } from '../data/nepalLocations';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -21,7 +22,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function PersonProfile() {
-  const { treeId, personId } = useParams();
+  const { treeSlug, personId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -33,13 +34,13 @@ export default function PersonProfile() {
   const [activeTab, setActiveTab] = useState('overview');
 
   const { data: person, isLoading } = useQuery({
-    queryKey: ['person', treeId, personId],
-    queryFn: () => personsApi.get(treeId, personId).then((r) => r.data),
+    queryKey: ['person', treeSlug, personId],
+    queryFn: () => personsApi.get(treeSlug, personId).then((r) => r.data),
   });
 
   const { data: comments } = useQuery({
-    queryKey: ['comments', treeId, personId],
-    queryFn: () => commentsApi.list(treeId, personId).then((r) => r.data),
+    queryKey: ['comments', treeSlug, personId],
+    queryFn: () => commentsApi.list(treeSlug, personId).then((r) => r.data),
     enabled: activeTab === 'comments',
   });
 
@@ -48,9 +49,9 @@ export default function PersonProfile() {
   }, [person]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => personsApi.update(treeId, personId, data),
+    mutationFn: (data) => personsApi.update(treeSlug, personId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['person', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['person', treeSlug, personId] });
       setIsEditing(false);
       toast.success('Profile updated');
     },
@@ -58,17 +59,17 @@ export default function PersonProfile() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => personsApi.delete(treeId, personId),
+    mutationFn: () => personsApi.delete(treeSlug, personId),
     onSuccess: () => {
-      navigate(`/trees/${treeId}`);
+      navigate(`/trees/${treeSlug}`);
       toast.success('Person deleted');
     },
   });
 
   const addEventMutation = useMutation({
-    mutationFn: (data) => lifeEventsApi.create(treeId, personId, data),
+    mutationFn: (data) => lifeEventsApi.create(treeSlug, personId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['person', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['person', treeSlug, personId] });
       setShowEventModal(false);
       setEventForm({ type: 'other', title: '', event_date: '', event_place: '', description: '' });
       toast.success('Event added');
@@ -76,17 +77,17 @@ export default function PersonProfile() {
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: (eventId) => lifeEventsApi.delete(treeId, personId, eventId),
+    mutationFn: (eventId) => lifeEventsApi.delete(treeSlug, personId, eventId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['person', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['person', treeSlug, personId] });
       toast.success('Event deleted');
     },
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (data) => commentsApi.create(treeId, personId, data),
+    mutationFn: (data) => commentsApi.create(treeSlug, personId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['comments', treeSlug, personId] });
       setCommentBody('');
       toast.success('Comment added');
     },
@@ -96,10 +97,10 @@ export default function PersonProfile() {
     mutationFn: (file) => {
       const formData = new FormData();
       formData.append('photo', file);
-      return personsApi.uploadPhoto(treeId, personId, formData);
+      return personsApi.uploadPhoto(treeSlug, personId, formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['person', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['person', treeSlug, personId] });
       queryClient.invalidateQueries({ queryKey: ['tree'] });
       toast.success('Photo uploaded');
     },
@@ -107,9 +108,9 @@ export default function PersonProfile() {
   });
 
   const deletePhotoMutation = useMutation({
-    mutationFn: () => personsApi.deletePhoto(treeId, personId),
+    mutationFn: () => personsApi.deletePhoto(treeSlug, personId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['person', treeId, personId] });
+      queryClient.invalidateQueries({ queryKey: ['person', treeSlug, personId] });
       queryClient.invalidateQueries({ queryKey: ['tree'] });
       toast.success('Photo removed');
     },
@@ -143,7 +144,7 @@ export default function PersonProfile() {
     <div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/trees/${treeId}`} className="p-2 rounded-lg hover:bg-gray-100">
+        <Link to={`/trees/${treeSlug}`} className="p-2 rounded-lg hover:bg-gray-100">
           <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
         </Link>
         <div className="flex-1">
@@ -223,6 +224,10 @@ export default function PersonProfile() {
             {person.birth_place && <InfoItem icon={MapPinIcon} label="Birth Place" value={person.birth_place} />}
             {person.religion && <InfoItem icon={HeartIcon} label="Religion" value={person.religion} />}
             {person.maiden_name && <InfoItem label="Maiden Name" value={person.maiden_name} />}
+            {(person.province || person.district || person.municipality) && (
+              <InfoItem icon={MapPinIcon} label="Address"
+                value={[person.address, person.municipality, person.district, person.province].filter(Boolean).join(', ')} />
+            )}
           </div>
         </div>
         {person.bio && <p className="mt-4 text-gray-700 text-sm">{person.bio}</p>}
@@ -257,6 +262,7 @@ export default function PersonProfile() {
             { label: 'Nationality', value: person.nationality },
             { label: 'Email', value: person.email },
             { label: 'Phone', value: person.phone },
+            { label: 'Address', value: [person.address, person.municipality, person.district, person.province].filter(Boolean).join(', ') },
           ].filter(i => i.value)} />
         </div>
       )}
@@ -301,10 +307,10 @@ export default function PersonProfile() {
 
       {activeTab === 'relationships' && (
         <div className="space-y-6">
-          <RelationshipSection title="Parents" persons={person.parents_list} treeId={treeId} />
-          <RelationshipSection title="Spouses / Partners" persons={person.spouses_list} treeId={treeId} />
-          <RelationshipSection title="Children" persons={person.children_list} treeId={treeId} />
-          <RelationshipSection title="Siblings" persons={person.siblings_list} treeId={treeId} />
+          <RelationshipSection title="Parents" persons={person.parents_list} treeSlug={treeSlug} />
+          <RelationshipSection title="Spouses / Partners" persons={person.spouses_list} treeSlug={treeSlug} />
+          <RelationshipSection title="Children" persons={person.children_list} treeSlug={treeSlug} />
+          <RelationshipSection title="Siblings" persons={person.siblings_list} treeSlug={treeSlug} />
         </div>
       )}
 
@@ -361,7 +367,7 @@ export default function PersonProfile() {
               { label: 'Birth Place', key: 'birth_place' },
               { label: 'Death Place', key: 'death_place' },
               { label: 'Occupation', key: 'occupation' },
-              { label: 'Religion', key: 'religion' },
+              { label: 'Religion (धर्म)', key: 'religion' },
               { label: 'Nationality', key: 'nationality' },
               { label: 'Email', key: 'email', type: 'email' },
               { label: 'Phone', key: 'phone' },
@@ -381,9 +387,9 @@ export default function PersonProfile() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
               <select className="input-field" value={editForm.gender || 'unknown'}
                 onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="male">Male (पुरुष)</option>
+                <option value="female">Female (महिला)</option>
+                <option value="other">Other (अन्य)</option>
                 <option value="unknown">Unknown</option>
               </select>
             </div>
@@ -396,6 +402,45 @@ export default function PersonProfile() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Date of Death</label>
               <input type="date" className="input-field" value={editForm.date_of_death?.split('T')[0] || ''}
                 onChange={(e) => setEditForm({ ...editForm, date_of_death: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Address Section */}
+          <div className="border-t pt-3 mt-3">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Address (ठेगाना)</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Province (प्रदेश)</label>
+                <select className="input-field" value={editForm.province || ''}
+                  onChange={(e) => setEditForm({ ...editForm, province: e.target.value, district: '', municipality: '' })}>
+                  <option value="">Select province</option>
+                  {NEPAL_PROVINCES.map((p) => (<option key={p} value={p}>{p}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">District (जिल्ला)</label>
+                <select className="input-field" value={editForm.district || ''}
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, municipality: '' })}
+                  disabled={!editForm.province}>
+                  <option value="">Select district</option>
+                  {getDistricts(editForm.province).map((d) => (<option key={d} value={d}>{d}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Municipality (नगरपालिका)</label>
+                <select className="input-field" value={editForm.municipality || ''}
+                  onChange={(e) => setEditForm({ ...editForm, municipality: e.target.value })}
+                  disabled={!editForm.district}>
+                  <option value="">Select municipality</option>
+                  {getMunicipalities(editForm.province, editForm.district).map((m) => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ward / Tole (वडा / टोल)</label>
+                <input className="input-field" value={editForm.address || ''}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  placeholder="e.g. Ward-5, Lakeside" />
+              </div>
             </div>
           </div>
           <div>
@@ -493,14 +538,14 @@ function DetailSection({ title, items }) {
   );
 }
 
-function RelationshipSection({ title, persons, treeId }) {
+function RelationshipSection({ title, persons, treeSlug }) {
   if (!persons || persons.length === 0) return null;
   return (
     <div>
       <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
       <div className="grid gap-2 sm:grid-cols-2">
         {persons.map((p) => (
-          <Link key={p.id} to={`/trees/${treeId}/persons/${p.id}`}
+          <Link key={p.id} to={`/trees/${treeSlug}/persons/${p.id}`}
             className="card hover:shadow-md transition flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${
               p.gender === 'male' ? 'bg-blue-500' : p.gender === 'female' ? 'bg-pink-500' : 'bg-gray-400'
