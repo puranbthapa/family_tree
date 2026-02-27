@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
@@ -69,6 +69,12 @@ const stats = [
 export default function LandingPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // SEO: set page title
+  useEffect(() => {
+    document.title = 'Hamro Bansawali — Build Your Nepali Family Tree Online | हाम्रो बंशावली';
+    return () => { document.title = 'Hamro Bansawali'; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -172,7 +178,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero Section ───────────────────────────────────── */}
-      <section className="relative pt-24 pb-14 sm:pt-40 sm:pb-28 overflow-hidden">
+      <section className="relative pt-24 pb-14 sm:pt-40 sm:pb-28 overflow-hidden" aria-label="Hero">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 rounded-full opacity-50 blur-3xl" />
@@ -191,7 +197,7 @@ export default function LandingPage() {
             Every Nepali Family Has a Story.
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-              Preserve Your Bansawali.
+              Preserve Your बंशावली.
             </span>
           </h1>
 
@@ -274,7 +280,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ───────────────────────────────────────── */}
-      <section id="features" className="py-14 sm:py-20 md:py-28">
+      <section id="features" className="py-14 sm:py-20 md:py-28" aria-label="Features">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -399,22 +405,31 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────── */}
-      <footer className="border-t border-gray-200 bg-gray-50 py-8 sm:py-12">
+      <footer className="border-t border-gray-200 bg-gray-50 py-8 sm:py-12" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-4 sm:gap-6 md:flex-row md:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">FT</span>
               </div>
-              <span className="text-sm font-semibold text-gray-900">Hamro Bansawali</span>
+              <span className="text-sm font-semibold text-gray-900">Hamro Bansawali — हाम्रो बंशावली</span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
+            <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm text-gray-500">
               <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
+              <Link to="/public/trees" className="hover:text-gray-900 transition-colors">Public Trees</Link>
               <Link to="/login" className="hover:text-gray-900 transition-colors">Sign In</Link>
               <Link to="/register" className="hover:text-gray-900 transition-colors">Sign Up</Link>
-            </div>
+            </nav>
             <p className="text-sm text-gray-400">
-              &copy; {new Date().getFullYear()} Hamro Bansawali. All rights reserved.
+              &copy; {new Date().getFullYear()} Hamro Bansawali — Nepal's Free Online Family Tree Builder. All rights reserved.
+            </p>
+          </div>
+          {/* SEO-friendly footer text */}
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-xs text-gray-400 max-w-3xl mx-auto leading-relaxed">
+              Hamro Bansawali (हाम्रो बंशावली) is a free online family tree builder for Nepali families.
+              Build your बंशावली, track sanskar events like bratabandha and bibaha, discover nata with our relationship calculator,
+              and connect your parivaar across Nepal and abroad. Preserve your kul parampara for future generations.
             </p>
           </div>
         </div>

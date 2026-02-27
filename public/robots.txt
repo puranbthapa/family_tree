@@ -1,2 +1,7 @@
 User-agent: *
-Disallow:
+Disallow: /api/
+Disallow: /admin/
+Allow: /
+Allow: /public/trees
+
+Sitemap: https://databackupnepal.com/sitemap.xml
